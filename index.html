@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>회원관리 시스템</title>
+
+  <!-- 귀엽고 세련되며 가독성 높은 한글 폰트 로드 (Jua + Pretendard) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
+            cute: ['Jua', 'Pretendard', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            mint: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+            },
+            coral: {
+              50: '#fff1f2',
+              100: '#ffe4e6',
+              500: '#f43f5e',
+              600: '#e11d48',
+            }
+          },
+          boxShadow: {
+            soft: '0 8px 30px rgba(99, 102, 241, 0.08)',
+            card: '0 4px 20px rgba(15, 23, 42, 0.05)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #f5f7ff 0%, #f8fafc 50%, #fdf2f8 100%);
+      color: #1e293b;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 커스텀 스크롤바 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* 부드러운 애니메이션 */
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeInSlide 0.25s ease-out forwards;
+    }
+
+    @keyframes spinSlow {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-fast {
+      animation: spinSlow 0.8s linear infinite;
+    }
+
+    /* 모달 백드롭 블러 */
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+    }
+
+    /* 변수 태그 버튼 호버 효과 */
+    .var-chip {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .var-chip:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-brand-200 selection:text-brand-700">
+
+  <!-- 최상단 개발자 크레딧 바 -->
+  <div class="bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-500 text-white text-center py-2 px-4 shadow-sm">
+    <p class="text-xs sm:text-sm font-medium tracking-wide flex items-center justify-center gap-1.5 flex-wrap">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-yellow-200 shrink-0"></i>
+      <span>개발자:가치있는 미래교육 연구소 대표 김병찬</span>
+    </p>
+  </div>
+
+  <!-- 메인 헤더 -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-indigo-100/80 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <!-- 좌측: 프로그램 타이틀 -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-500 text-white flex items-center justify-center shadow-md shrink-0">
+          <i data-lucide="users-round" class="w-6 h-6"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 id="appTitleDisplay" class="font-cute text-xl sm:text-2xl text-slate-800 truncate tracking-tight">
+            회원관리 시스템 불러오는 중...
+          </h1>
+          <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5 flex-wrap">
+            <span class="inline-flex items-center gap-1 text-emerald-600 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              실시간 시트 동기화
+            </span>
+            <span class="text-slate-300">|</span>
+            <span id="lastSyncedText">동기화 대기중</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측: 액션 버튼 그룹 -->
+      <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <button
+          id="btnRefresh"
+          onclick="syncData(true)"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-brand-700 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+          title="구글 시트 데이터 새로고침"
+        >
+          <i id="refreshIcon" data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>새로고침</span>
+        </button>
+
+        <button
+          id="btnAdminSheet"
+          onclick="handleAdminSheetClick()"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+        >
+          <i id="adminLockIcon" data-lucide="lock" class="w-4 h-4 text-amber-300"></i>
+          <span id="adminBtnText">관리자 시트</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20">
+
+    <!-- 데모 모드 안내 배너 (로컬 프리뷰 시에만 표시) -->
+    <div id="demoBanner" class="hidden rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs sm:text-sm text-amber-800 flex items-center gap-2.5">
+      <i data-lucide="info" class="w-5 h-5 text-amber-500 shrink-0"></i>
+      <span><strong>미리보기(데모) 모드</strong>로 실행 중입니다. Google Apps Script에 배포하면 실제 구글 시트 데이터 및 Gmail 발송과 100% 실시간 연동됩니다. (데모 관리자 인증번호: <strong>1234</strong>)</span>
+    </div>
+
+    <!-- 요약 통계 카드 4개 -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-card hover:shadow-soft transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-semibold text-slate-500">전체 회원</span>
+          <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-1">
+          <span id="statTotal" class="font-cute text-2xl sm:text-3xl text-slate-800">0</span>
+          <span class="text-xs sm:text-sm text-slate-400 font-medium">명</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-card hover:shadow-soft transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-semibold text-slate-500">필터링된 회원</span>
+          <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <i data-lucide="filter" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-1">
+          <span id="statFiltered" class="font-cute text-2xl sm:text-3xl text-purple-600">0</span>
+          <span class="text-xs sm:text-sm text-slate-400 font-medium">명</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-card hover:shadow-soft transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-semibold text-slate-500">선택된 회원</span>
+          <div class="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center">
+            <i data-lucide="check-square" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-1">
+          <span id="statSelected" class="font-cute text-2xl sm:text-3xl text-emerald-600">0</span>
+          <span class="text-xs sm:text-sm text-slate-400 font-medium">명</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-card hover:shadow-soft transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-semibold text-slate-500">금일 메일 잔여량</span>
+          <div class="w-9 h-9 rounded-xl bg-coral-50 text-coral-500 flex items-center justify-center">
+            <i data-lucide="mail-check" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-1">
+          <span id="statQuota" class="font-cute text-2xl sm:text-3xl text-rose-500">-</span>
+          <span class="text-xs sm:text-sm text-slate-400 font-medium">건</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 탭 네비게이션 -->
+    <nav class="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-card inline-flex w-full sm:w-auto gap-1.5">
+      <button
+        id="tabMembersBtn"
+        onclick="switchTab('members')"
+        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-brand-600 text-white shadow-sm"
+      >
+        <i data-lucide="contact-2" class="w-4 h-4"></i>
+        <span>회원정보 관리 & 필터</span>
+      </button>
+      <button
+        id="tabEmailBtn"
+        onclick="switchTab('email')"
+        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all text-slate-600 hover:bg-slate-100"
+      >
+        <i data-lucide="send" class="w-4 h-4"></i>
+        <span>이메일 일괄 발송</span>
+      </button>
+    </nav>
+
+    <!-- ================================================================== -->
+    <!-- 탭 1: 회원정보 관리 & 필터링 -->
+    <!-- ================================================================== -->
+    <section id="panelMembers" class="space-y-4 animate-fade-in">
+      <!-- 필터 카드 -->
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-card space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 class="font-cute text-lg sm:text-xl text-slate-800 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-100 text-brand-600 flex items-center justify-center">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            </span>
+            조건별 회원 필터링
+          </h2>
+          <div class="flex items-center gap-2">
+            <button
+              onclick="resetFilters()"
+              class="text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1"
+            >
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              필터 초기화
+            </button>
+            <button
+              onclick="goToEmailWithFiltered()"
+              class="text-xs font-bold text-white bg-gradient-to-r from-brand-500 to-purple-500 hover:from-brand-600 hover:to-purple-600 px-3.5 py-1.5 rounded-lg shadow-sm transition-all inline-flex items-center gap-1.5 active:scale-95"
+            >
+              <i data-lucide="mail-plus" class="w-3.5 h-3.5"></i>
+              필터 결과로 메일 쓰기
+            </button>
+          </div>
+        </div>
+
+        <!-- 필터 입력 그리드 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- 통합 검색 -->
+          <div class="relative">
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">이름 / 이메일 / 생년월일 검색</label>
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input
+                type="text"
+                id="filterKeyword"
+                oninput="applyFilters()"
+                placeholder="검색어 입력..."
+                class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm transition-all"
+              />
+            </div>
+          </div>
+
+          <!-- 생일(월) 필터 -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">생년월일 (출생월 필터)</label>
+            <select
+              id="filterBirthMonth"
+              onchange="applyFilters()"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm bg-white transition-all"
+            >
+              <option value="">전체 월</option>
+              <option value="01">1월 생일자</option>
+              <option value="02">2월 생일자</option>
+              <option value="03">3월 생일자</option>
+              <option value="04">4월 생일자</option>
+              <option value="05">5월 생일자</option>
+              <option value="06">6월 생일자</option>
+              <option value="07">7월 생일자</option>
+              <option value="08">8월 생일자</option>
+              <option value="09">9월 생일자</option>
+              <option value="10">10월 생일자</option>
+              <option value="11">11월 생일자</option>
+              <option value="12">12월 생일자</option>
+            </select>
+          </div>
+
+          <!-- 이메일 도메인 필터 -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">이메일 도메인</label>
+            <select
+              id="filterDomain"
+              onchange="applyFilters()"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm bg-white transition-all"
+            >
+              <option value="">전체 도메인</option>
+            </select>
+          </div>
+
+          <!-- 데이터 상태 필터 -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">회원정보 상태</label>
+            <select
+              id="filterStatus"
+              onchange="applyFilters()"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm bg-white transition-all"
+            >
+              <option value="all">전체 보기</option>
+              <option value="validEmail">이메일 정상 회원만</option>
+              <option value="missingName">이름 미입력 회원 (자동 '회원' 처리)</option>
+              <option value="invalidEmail">이메일 누락/오류 회원</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 회원 목록 카드 -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-card overflow-hidden">
+        <!-- 테이블 상단 바 -->
+        <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60">
+          <div class="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              id="checkAllFiltered"
+              onchange="toggleSelectAllFiltered(this.checked)"
+              class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+            />
+            <label for="checkAllFiltered" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">
+              현재 목록 전체 선택 (<span id="filteredCountLabel" class="text-brand-600">0</span>명)
+            </label>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              id="btnEmailSelected"
+              onclick="goToEmailWithSelected()"
+              class="hidden text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3.5 py-1.5 rounded-xl transition-colors inline-flex items-center gap-1.5"
+            >
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              선택한 <span id="selectedBtnCount">0</span>명에게 메일 쓰기
+            </button>
+          </div>
+        </div>
+
+        <!-- 로딩 스켈레톤 -->
+        <div id="loadingState" class="p-12 text-center space-y-3">
+          <div class="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto"></div>
+          <p class="text-sm font-medium text-slate-500">구글 시트에서 회원 정보를 실시간으로 불러오고 있어요...</p>
+        </div>
+
+        <!-- 빈 상태 -->
+        <div id="emptyState" class="hidden p-12 text-center space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+            <i data-lucide="search-x" class="w-7 h-7"></i>
+          </div>
+          <p class="font-cute text-lg text-slate-700">조건에 맞는 회원이 없습니다</p>
+          <p class="text-xs sm:text-sm text-slate-400">검색어나 필터 조건을 변경해 보세요.</p>
+        </div>
+
+        <!-- 데스크톱 테이블 뷰 (md 이상) -->
+        <div id="desktopTableWrap" class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/80 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-100">
+                <th class="py-3.5 pl-6 pr-3 w-12">선택</th>
+                <th class="py-3.5 px-3 w-16">No</th>
+                <th class="py-3.5 px-4">회원이름 (B열)</th>
+                <th class="py-3.5 px-4">생년월일 (C열)</th>
+                <th class="py-3.5 px-4">이메일 주소 (D열)</th>
+                <th class="py-3.5 px-4">응답일시</th>
+              </tr>
+            </thead>
+            <tbody id="memberTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+
+        <!-- 모바일 카드 뷰 (md 미만) -->
+        <div id="mobileCardList" class="md:hidden divide-y divide-slate-100"></div>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 탭 2: 이메일 일괄 발송 스튜디오 -->
+    <!-- ================================================================== -->
+    <section id="panelEmail" class="hidden space-y-5 animate-fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        <!-- 좌측: 발송 대상 설정 (4칸) -->
+        <div class="lg:col-span-4 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-card space-y-5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="font-cute text-lg text-slate-800">발송 대상 선택</h2>
+              <p class="text-xs text-slate-400">이메일이 유효한 회원에게만 전송됩니다</p>
+            </div>
+          </div>
+
+          <!-- 대상 선택 라디오 카드 -->
+          <div class="space-y-2.5">
+            <label class="flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all hover:bg-indigo-50/40" id="radioCardAll">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="recipientMode" value="all" checked onchange="updateRecipientMode()" class="w-4 h-4 text-brand-600 focus:ring-brand-500" />
+                <div>
+                  <p class="text-sm font-bold text-slate-800">전체 회원</p>
+                  <p class="text-xs text-slate-400">시트에 등록된 모든 회원</p>
+                </div>
+              </div>
+              <span id="badgeCountAll" class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-brand-700">0명</span>
+            </label>
+
+            <label class="flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all hover:bg-purple-50/40" id="radioCardFiltered">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="recipientMode" value="filtered" onchange="updateRecipientMode()" class="w-4 h-4 text-purple-600 focus:ring-purple-500" />
+                <div>
+                  <p class="text-sm font-bold text-slate-800">필터링된 회원</p>
+                  <p class="text-xs text-slate-400">현재 필터 조건에 맞는 회원</p>
+                </div>
+              </div>
+              <span id="badgeCountFiltered" class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">0명</span>
+            </label>
+
+            <label class="flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all hover:bg-emerald-50/40" id="radioCardSelected">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="recipientMode" value="selected" onchange="updateRecipientMode()" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+                <div>
+                  <p class="text-sm font-bold text-slate-800">직접 선택한 회원</p>
+                  <p class="text-xs text-slate-400">체크박스로 선택한 회원</p>
+                </div>
+              </div>
+              <span id="badgeCountSelected" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">0명</span>
+            </label>
+          </div>
+
+          <!-- 수신자 미리보기 리스트 -->
+          <div class="pt-3 border-t border-slate-100 space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>최종 발송 대상자 미리보기</span>
+              <span id="finalRecipientCount" class="text-brand-600 font-bold">0명</span>
+            </div>
+            <div id="recipientPreviewChips" class="max-h-48 overflow-y-auto flex flex-wrap gap-1.5 p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
+              <span class="text-xs text-slate-400">발송 대상자가 없습니다.</span>
+            </div>
+          </div>
+
+          <!-- 빈 값 예외 처리 안내 -->
+          <div class="rounded-2xl bg-indigo-50/70 border border-indigo-100 p-3.5 text-xs text-indigo-800 space-y-1">
+            <p class="font-bold flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-600"></i>
+              자동 예외 처리 안내
+            </p>
+            <p class="leading-relaxed text-indigo-700/90">
+              시트에 이름 데이터가 비어 있는 회원에게는 <code class="bg-white px-1.5 py-0.5 rounded font-bold text-brand-700">{{이름}}</code>이 빈칸 대신 <strong>'회원'</strong>으로 자동 치환되어 안전하게 발송됩니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- 우측: 이메일 작성기 & 개인화 변수 (8칸) -->
+        <div class="lg:col-span-8 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-card space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
+                <i data-lucide="pen-line" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="font-cute text-lg text-slate-800">맞춤형 이메일 작성</h2>
+                <p class="text-xs text-slate-400">아래 변수 버튼을 클릭하면 커서 위치에 자동 삽입됩니다</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 원클릭 개인화 변수 삽입 툴바 -->
+          <div class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-3.5 border border-indigo-100/80 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-slate-600 flex items-center gap-1 mr-1">
+                <i data-lucide="wand-2" class="w-3.5 h-3.5 text-purple-500"></i>
+                원클릭 변수 삽입:
+              </span>
+              <button
+                type="button"
+                onclick="insertVariable('{{이름}}')"
+                class="var-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-brand-600 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-600 text-xs font-bold shadow-sm"
+              >
+                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                <span>{{이름}}</span>
+              </button>
+              <button
+                type="button"
+                onclick="insertVariable('{{생년월일}}')"
+                class="var-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-purple-600 text-purple-700 hover:text-white border border-purple-200 hover:border-purple-600 text-xs font-bold shadow-sm"
+              >
+                <i data-lucide="cake" class="w-3.5 h-3.5"></i>
+                <span>{{생년월일}}</span>
+              </button>
+            </div>
+            <span id="activeTargetHint" class="text-[11px] font-medium text-slate-500 bg-white/80 px-2.5 py-1 rounded-full border border-slate-200/70">
+              삽입 위치: 본문
+            </span>
+          </div>
+
+          <!-- 발신자 표시 이름 -->
+          <div>
+            <label for="emailSenderName" class="block text-xs font-bold text-slate-600 mb-1.5">발신자 이름 (받는 사람에게 표시)</label>
+            <input
+              type="text"
+              id="emailSenderName"
+              value="가치있는 미래교육 연구소"
+              placeholder="발신자 이름 입력"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm transition-all"
+            />
+          </div>
+
+          <!-- 이메일 제목 -->
+          <div>
+            <label for="emailSubject" class="block text-xs font-bold text-slate-600 mb-1.5">이메일 제목</label>
+            <input
+              type="text"
+              id="emailSubject"
+              onfocus="setActiveField('emailSubject')"
+              placeholder="예: [안내] {{이름}}님, 소중한 소식을 전해드립니다!"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium transition-all"
+            />
+          </div>
+
+          <!-- 이메일 본문 -->
+          <div>
+            <label for="emailBody" class="block text-xs font-bold text-slate-600 mb-1.5">이메일 본문</label>
+            <textarea
+              id="emailBody"
+              rows="9"
+              onfocus="setActiveField('emailBody')"
+              placeholder="안녕하세요, {{이름}}님!&#10;&#10;회원님의 생년월일({{생년월일}}) 정보와 함께 맞춤형 안내를 드립니다.&#10;이곳에 내용을 작성해 주세요."
+              class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm leading-relaxed resize-y transition-all"
+            ></textarea>
+          </div>
+
+          <!-- 하단 액션 버튼 -->
+          <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+            <button
+              type="button"
+              onclick="openPreviewModal()"
+              class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all active:scale-95"
+            >
+              <i data-lucide="eye" class="w-4 h-4 text-brand-600"></i>
+              <span>발송 전 미리보기</span>
+            </button>
+            <button
+              type="button"
+              onclick="openSendConfirmModal()"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
+            >
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>이메일 일괄 발송하기</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ================================================================== -->
+  <!-- 모달 1: 관리자 인증 모달 -->
+  <!-- ================================================================== -->
+  <div id="modalAdmin" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-fade-in">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+            <i data-lucide="key-round" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-cute text-lg text-slate-800">관리자 인증</h3>
+            <p class="text-xs text-slate-400">인증 후 구글 시트로 이동합니다</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modalAdmin')" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label for="adminCodeInput" class="block text-xs font-bold text-slate-600">관리자 인증번호 (설정 시트 A2)</label>
+        <input
+          type="password"
+          id="adminCodeInput"
+          onkeydown="if(event.key==='Enter') submitAdminAuth()"
+          placeholder="인증번호를 입력하세요"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+        />
+        <p id="adminErrorMsg" class="hidden text-xs text-rose-500 font-medium"></p>
+      </div>
+
+      <div class="flex gap-2.5">
+        <button onclick="closeModal('modalAdmin')" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition-colors">
+          취소
+        </button>
+        <button id="btnSubmitAdmin" onclick="submitAdminAuth()" class="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-sm transition-colors">
+          인증하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- 모달 2: 발송 전 미리보기 모달 (첫 번째 회원 자동 치환 확인) -->
+  <!-- ================================================================== -->
+  <div id="modalPreview" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+      <!-- 모달 헤더 -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-indigo-50/60">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center">
+            <i data-lucide="mail-open" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-cute text-lg text-slate-800">발송 전 이메일 미리보기</h3>
+            <p class="text-xs text-slate-500">첫 번째 발송 대상자의 데이터로 자동 치환된 화면입니다</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modalPreview')" class="p-1.5 rounded-xl text-slate-400 hover:bg-white hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 모달 바디 -->
+      <div class="p-6 overflow-y-auto space-y-4">
+        <!-- 대상자 전환 컨트롤 -->
+        <div class="flex items-center justify-between bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-100 text-xs">
+          <span class="font-semibold text-slate-600">
+            미리보기 대상: <strong id="previewMemberIndex" class="text-brand-600">1</strong> / <span id="previewMemberTotal">1</span>번째 회원
+          </span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="changePreviewMember(-1)" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold text-slate-600">이전</button>
+            <button onclick="changePreviewMember(1)" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold text-slate-600">다음</button>
+          </div>
+        </div>
+
+        <!-- 실제 이메일 프리뷰 카드 -->
+        <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="bg-slate-50 px-5 py-3.5 border-b border-slate-200 space-y-1.5 text-xs sm:text-sm">
+            <div class="flex items-start gap-2">
+              <span class="text-slate-400 font-semibold w-16 shrink-0">보내는이</span>
+              <span id="previewSender" class="font-medium text-slate-700"></span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-slate-400 font-semibold w-16 shrink-0">받는사람</span>
+              <span id="previewRecipient" class="font-semibold text-brand-700 break-all"></span>
+            </div>
+            <div class="flex items-start gap-2 pt-1 border-t border-slate-200/70">
+              <span class="text-slate-400 font-semibold w-16 shrink-0">제목</span>
+              <span id="previewSubject" class="font-bold text-slate-900"></span>
+            </div>
+          </div>
+          <div class="p-5 bg-white">
+            <div id="previewBody" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words min-h-[140px]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 모달 푸터 -->
+      <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2.5">
+        <button onclick="closeModal('modalPreview')" class="px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm">
+          닫기
+        </button>
+        <button onclick="closeModal('modalPreview'); openSendConfirmModal();" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm inline-flex items-center gap-1.5">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          이대로 발송하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- 모달 3: 발송 최종 확인 모달 -->
+  <!-- ================================================================== -->
+  <div id="modalConfirmSend" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-fade-in">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-brand-600 flex items-center justify-center mx-auto">
+          <i data-lucide="send" class="w-7 h-7"></i>
+        </div>
+        <h3 class="font-cute text-xl text-slate-800">이메일을 일괄 발송할까요?</h3>
+        <p class="text-sm text-slate-500">
+          총 <strong id="confirmSendCount" class="text-brand-600 text-base">0명</strong>의 회원에게 개인화 치환된 이메일이 전송됩니다.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-4 text-xs text-slate-600 space-y-1.5 border border-slate-100">
+        <p><span class="font-bold text-slate-800">제목:</span> <span id="confirmSendSubject"></span></p>
+        <p><span class="font-bold text-slate-800">발신자:</span> <span id="confirmSendSender"></span></p>
+      </div>
+
+      <div id="sendingProgressBox" class="hidden text-center py-2 space-y-2">
+        <div class="w-7 h-7 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs font-bold text-brand-600">이메일을 안전하게 발송하고 있습니다. 잠시만 기다려 주세요...</p>
+      </div>
+
+      <div id="confirmSendButtons" class="flex gap-2.5">
+        <button onclick="closeModal('modalConfirmSend')" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm">
+          취소
+        </button>
+        <button onclick="executeBulkSend()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 text-white font-bold text-sm shadow-sm">
+          발송 시작
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- 모달 4: 발송 결과 리포트 모달 -->
+  <!-- ================================================================== -->
+  <div id="modalResult" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-fade-in">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+          <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+        </div>
+        <h3 class="font-cute text-xl text-slate-800">이메일 발송 완료!</h3>
+        <p id="resultSummaryText" class="text-sm text-slate-500"></p>
+      </div>
+
+      <div id="resultFailedWrap" class="hidden bg-rose-50 rounded-2xl p-4 border border-rose-100 space-y-2 max-h-40 overflow-y-auto">
+        <p class="text-xs font-bold text-rose-700">발송 실패 내역</p>
+        <ul id="resultFailedList" class="text-xs text-rose-600 space-y-1 list-disc list-inside"></ul>
+      </div>
+
+      <button onclick="closeModal('modalResult')" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컨테이너 -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-xs sm:max-w-sm pointer-events-none"></div>
+
+  <!-- ================================================================== -->
+  <!-- 클라이언트 JavaScript 로직 -->
+  <!-- ================================================================== -->
+  <script>
+    // 앱 전역 상태 관리 객체
+    const state = {
+      appTitle: '회원관리 시스템',
+      members: [],
+      filteredMembers: [],
+      selectedIds: new Set(),
+      remainingQuota: 100,
+      isAdminVerified: false,
+      verifiedSheetUrl: '',
+      activeInputId: 'emailBody', // 원클릭 변수 삽입 대상 (기본: 본문)
+      previewIndex: 0
+    };
+
+    // Google Apps Script 실행 환경 여부 체크
+    const isGasEnvironment = (typeof google !== 'undefined' && google.script && google.script.run);
+
+    // 페이지 로드 초기화
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      if (!isGasEnvironment) {
+        document.getElementById('demoBanner').classList.remove('hidden');
+      }
+      syncData(false);
+    });
+
+    /**
+     * 토스트 알림 표시 (alert 대체)
+     */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        warning: 'bg-amber-500 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+
+      toast.className = `${colors[type] || colors.info} px-4 py-3 rounded-2xl shadow-lg text-xs sm:text-sm font-semibold flex items-center gap-2 pointer-events-auto animate-fade-in`;
+      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(6px)';
+        toast.style.transition = 'all 0.25s ease';
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    }
+
+    /**
+     * HTML 이스케이프 유틸리티
+     */
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * 이메일 형식 유효성 검사
+     */
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+    }
+
+    /**
+     * 이름 빈 값 예외 처리 함수 (비어 있으면 '회원' 반환)
+     */
+    function getSafeName(name) {
+      const trimmed = String(name || '').trim();
+      return trimmed !== '' ? trimmed : '회원';
+    }
+
+    /**
+     * 개인화 변수 자동 치환 ({{이름}}, {{생년월일}})
+     */
+    function applyPersonalization(template, member) {
+      const safeName = getSafeName(member.name);
+      const safeBirth = String(member.birth || '').trim();
+      return String(template || '')
+        .replace(/\{\{이름\}\}/g, safeName)
+        .replace(/\{\{생년월일\}\}/g, safeBirth);
+    }
+
+    /**
+     * 구글 시트 실시간 데이터 동기화
+     */
+    function syncData(showFeedback = false) {
+      const icon = document.getElementById('refreshIcon');
+      icon.classList.add('animate-spin-fast');
+
+      if (isGasEnvironment) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            icon.classList.remove('animate-spin-fast');
+            if (res && res.success) {
+              handleDataLoaded(res, showFeedback);
+            } else {
+              showToast(res ? res.message : '데이터 로드에 실패했습니다.', 'error');
+              document.getElementById('loadingState').classList.add('hidden');
+            }
+          })
+          .withFailureHandler((err) => {
+            icon.classList.remove('animate-spin-fast');
+            showToast('서버 통신 오류: ' + err.message, 'error');
+            document.getElementById('loadingState').classList.add('hidden');
+          })
+          .getAppData();
+      } else {
+        // 로컬 프리뷰용 데모 데이터 폴백
+        setTimeout(() => {
+          icon.classList.remove('animate-spin-fast');
+          const demoRes = {
+            success: true,
+            appTitle: '가치있는 미래교육 스마트 회원관리',
+            remainingQuota: 98,
+            syncedAt: new Date().toLocaleString('ko-KR'),
+            members: [
+              { id: 2, timestamp: '2026-11-20 09:15', name: '김지민', birth: '1995-03-14', email: 'jimin.kim@gmail.com', extra: {} },
+              { id: 3, timestamp: '2026-11-21 14:22', name: '이서준', birth: '1988-11-26', email: 'seojun@naver.com', extra: {} },
+              { id: 4, timestamp: '2026-11-22 18:05', name: '', birth: '2001-07-08', email: 'noname_member@daum.net', extra: {} },
+              { id: 5, timestamp: '2026-11-24 11:40', name: '박하윤', birth: '1992-11-02', email: 'hayoon.park@gmail.com', extra: {} },
+              { id: 6, timestamp: '2026-11-25 16:30', name: '최도현', birth: '1985-05-19', email: 'invalid-email-format', extra: {} }
+            ]
+          };
+          handleDataLoaded(demoRes, showFeedback);
+        }, 450);
+      }
+    }
+
+    /**
+     * 로드된 데이터 상태 반영 및 UI 렌더링
+     */
+    function handleDataLoaded(res, showFeedback) {
+      state.appTitle = res.appTitle || '스마트 회원관리 시스템';
+      state.members = res.members || [];
+      state.remainingQuota = res.remainingQuota;
+
+      // 프로그램 타이틀 실시간 반영
+      document.title = state.appTitle;
+      document.getElementById('appTitleDisplay').textContent = state.appTitle;
+      document.getElementById('lastSyncedText').textContent = `최근 동기화: ${res.syncedAt || '방금 전'}`;
+      document.getElementById('statQuota').textContent = state.remainingQuota >= 0 ? state.remainingQuota : '-';
+
+      // 이메일 도메인 드롭다운 옵션 동적 생성
+      populateDomainFilter();
+
+      // 로딩 숨기고 필터 적용
+      document.getElementById('loadingState').classList.add('hidden');
+      applyFilters();
+
+      if (showFeedback) {
+        showToast(`최신 회원정보 ${state.members.length}건이 동기화되었습니다!`, 'success');
+      }
+    }
+
+    /**
+     * 이메일 도메인 필터 옵션 생성
+     */
+    function populateDomainFilter() {
+      const select = document.getElementById('filterDomain');
+      const currentVal = select.value;
+      const domains = new Set();
+
+      state.members.forEach((m) => {
+        if (isValidEmail(m.email)) {
+          const domain = m.email.split('@')[1].toLowerCase();
+          domains.add(domain);
+        }
+      });
+
+      select.innerHTML = '<option value="">전체 도메인</option>';
+      Array.from(domains).sort().forEach((d) => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = '@' + d;
+        select.appendChild(opt);
+      });
+      select.value = currentVal;
+    }
+
+    /**
+     * 회원 조건별 필터링 실행
+     */
+    function applyFilters() {
+      const keyword = document.getElementById('filterKeyword').value.trim().toLowerCase();
+      const birthMonth = document.getElementById('filterBirthMonth').value;
+      const domain = document.getElementById('filterDomain').value;
+      const status = document.getElementById('filterStatus').value;
+
+      state.filteredMembers = state.members.filter((m) => {
+        // 1. 키워드 필터 (이름, 생년월일, 이메일 통합 검색)
+        if (keyword) {
+          const combined = `${m.name} ${m.birth} ${m.email}`.toLowerCase();
+          if (!combined.includes(keyword)) return false;
+        }
+
+        // 2. 생년월일 출생월 필터 (YYYY-MM-DD 또는 MM 포함 패턴 지원)
+        if (birthMonth) {
+          const b = String(m.birth || '');
+          const matchIso = b.match(/^\d{4}[-./](\d{1,2})/);
+          if (matchIso) {
+            const monthStr = matchIso[1].padStart(2, '0');
+            if (monthStr !== birthMonth) return false;
+          } else {
+            return false;
+          }
+        }
+
+        // 3. 이메일 도메인 필터
+        if (domain) {
+          if (!isValidEmail(m.email)) return false;
+          const mDomain = m.email.split('@')[1].toLowerCase();
+          if (mDomain !== domain) return false;
+        }
+
+        // 4. 데이터 상태 필터
+        if (status === 'validEmail' && !isValidEmail(m.email)) return false;
+        if (status === 'missingName' && String(m.name || '').trim() !== '') return false;
+        if (status === 'invalidEmail' && isValidEmail(m.email)) return false;
+
+        return true;
+      });
+
+      renderMembers();
+      updateStatsAndBadges();
+    }
+
+    /**
+     * 필터 초기화
+     */
+    function resetFilters() {
+      document.getElementById('filterKeyword').value = '';
+      document.getElementById('filterBirthMonth').value = '';
+      document.getElementById('filterDomain').value = '';
+      document.getElementById('filterStatus').value = 'all';
+      applyFilters();
+      showToast('모든 필터가 초기화되었습니다.', 'info');
+    }
+
+    /**
+     * 회원 목록 렌더링 (PC 테이블 + 모바일 카드 동시 지원)
+     */
+    function renderMembers() {
+      const tbody = document.getElementById('memberTableBody');
+      const mobileList = document.getElementById('mobileCardList');
+      const emptyState = document.getElementById('emptyState');
+      const desktopWrap = document.getElementById('desktopTableWrap');
+
+      tbody.innerHTML = '';
+      mobileList.innerHTML = '';
+
+      if (state.filteredMembers.length === 0) {
+        emptyState.classList.remove('hidden');
+        desktopWrap.classList.add('md:hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      desktopWrap.classList.remove('md:hidden');
+
+      state.filteredMembers.forEach((m, idx) => {
+        const checked = state.selectedIds.has(m.id);
+        const isMissingName = !String(m.name || '').trim();
+        const validEmail = isValidEmail(m.email);
+
+        const nameBadge = isMissingName
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700" title="발송 시 '회원'으로 자동 대체됨">미입력 → 회원</span>`
+          : `<span class="font-bold text-slate-800">${escapeHtml(m.name)}</span>`;
+
+        const emailDisplay = validEmail
+          ? `<span class="text-slate-600 font-medium">${escapeHtml(m.email)}</span>`
+          : `<span class="inline-flex items-center gap-1 text-rose-500 text-xs font-bold bg-rose-50 px-2 py-0.5 rounded-lg">${escapeHtml(m.email || '이메일 없음')} (발송불가)</span>`;
+
+        // 데스크톱 테이블 행
+        const tr = document.createElement('tr');
+        tr.className = `transition-colors ${checked ? 'bg-indigo-50/50' : 'hover:bg-slate-50/80'}`;
+        tr.innerHTML = `
+          <td class="py-3.5 pl-6 pr-3">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleSelectMember(${m.id}, this.checked)"
+              class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+          </td>
+          <td class="py-3.5 px-3 text-slate-400 font-semibold text-xs">${idx + 1}</td>
+          <td class="py-3.5 px-4">${nameBadge}</td>
+          <td class="py-3.5 px-4 text-slate-600">${escapeHtml(m.birth || '-')}</td>
+          <td class="py-3.5 px-4">${emailDisplay}</td>
+          <td class="py-3.5 px-4 text-xs text-slate-400">${escapeHtml(m.timestamp || '-')}</td>
+        `;
+        tbody.appendChild(tr);
+
+        // 모바일 카드 아이템
+        const card = document.createElement('div');
+        card.className = `p-4 flex items-start gap-3 transition-colors ${checked ? 'bg-indigo-50/50' : 'bg-white'}`;
+        card.innerHTML = `
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleSelectMember(${m.id}, this.checked)"
+            class="mt-1 w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 shrink-0" />
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">${nameBadge}</div>
+              <span class="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">${escapeHtml(m.birth || '생일 미입력')}</span>
+            </div>
+            <div class="text-xs break-all">${emailDisplay}</div>
+            <div class="text-[11px] text-slate-400">${escapeHtml(m.timestamp || '')}</div>
+          </div>
+        `;
+        mobileList.appendChild(card);
+      });
+
+      syncSelectAllCheckbox();
+    }
+
+    /**
+     * 개별 회원 체크박스 토글
+     */
+    function toggleSelectMember(id, isChecked) {
+      if (isChecked) {
+        state.selectedIds.add(id);
+      } else {
+        state.selectedIds.delete(id);
+      }
+      renderMembers();
+      updateStatsAndBadges();
+    }
+
+    /**
+     * 현재 필터링된 회원 전체 선택/해제
+     */
+    function toggleSelectAllFiltered(isChecked) {
+      state.filteredMembers.forEach((m) => {
+        if (isChecked) {
+          state.selectedIds.add(m.id);
+        } else {
+          state.selectedIds.delete(m.id);
+        }
+      });
+      renderMembers();
+      updateStatsAndBadges();
+    }
+
+    /**
+     * 전체 선택 체크박스 상태 동기화
+     */
+    function syncSelectAllCheckbox() {
+      const checkAll = document.getElementById('checkAllFiltered');
+      if (state.filteredMembers.length === 0) {
+        checkAll.checked = false;
+        return;
+      }
+      const allSelected = state.filteredMembers.every((m) => state.selectedIds.has(m.id));
+      checkAll.checked = allSelected;
+    }
+
+    /**
+     * 통계 카드 및 배지 업데이트
+     */
+    function updateStatsAndBadges() {
+      document.getElementById('statTotal').textContent = state.members.length;
+      document.getElementById('statFiltered').textContent = state.filteredMembers.length;
+      document.getElementById('statSelected').textContent = state.selectedIds.size;
+      document.getElementById('filteredCountLabel').textContent = state.filteredMembers.length;
+
+      const btnSelected = document.getElementById('btnEmailSelected');
+      if (state.selectedIds.size > 0) {
+        btnSelected.classList.remove('hidden');
+        document.getElementById('selectedBtnCount').textContent = state.selectedIds.size;
+      } else {
+        btnSelected.classList.add('hidden');
+      }
+
+      // 이메일 탭 대상자 수 업데이트 (유효한 이메일 보유자 기준)
+      const validAll = state.members.filter((m) => isValidEmail(m.email));
+      const validFiltered = state.filteredMembers.filter((m) => isValidEmail(m.email));
+      const validSelected = state.members.filter((m) => state.selectedIds.has(m.id) && isValidEmail(m.email));
+
+      document.getElementById('badgeCountAll').textContent = `${validAll.length}명`;
+      document.getElementById('badgeCountFiltered').textContent = `${validFiltered.length}명`;
+      document.getElementById('badgeCountSelected').textContent = `${validSelected.length}명`;
+
+      updateRecipientMode();
+    }
+
+    /**
+     * 탭 전환 (회원관리 <-> 이메일 발송)
+     */
+    function switchTab(tabName) {
+      const btnM = document.getElementById('tabMembersBtn');
+      const btnE = document.getElementById('tabEmailBtn');
+      const panelM = document.getElementById('panelMembers');
+      const panelE = document.getElementById('panelEmail');
+
+      if (tabName === 'members') {
+        panelM.classList.remove('hidden');
+        panelE.classList.add('hidden');
+        btnM.className = 'flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-brand-600 text-white shadow-sm';
+        btnE.className = 'flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all text-slate-600 hover:bg-slate-100';
+      } else {
+        panelM.classList.add('hidden');
+        panelE.classList.remove('hidden');
+        btnE.className = 'flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-brand-600 text-white shadow-sm';
+        btnM.className = 'flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all text-slate-600 hover:bg-slate-100';
+        updateRecipientMode();
+      }
+    }
+
+    /**
+     * 필터링된 회원으로 바로 메일 쓰기 이동
+     */
+    function goToEmailWithFiltered() {
+      document.querySelector('input[name="recipientMode"][value="filtered"]').checked = true;
+      switchTab('email');
+      showToast('필터링된 회원이 발송 대상으로 설정되었습니다.', 'info');
+    }
+
+    /**
+     * 체크박스 선택한 회원으로 바로 메일 쓰기 이동
+     */
+    function goToEmailWithSelected() {
+      document.querySelector('input[name="recipientMode"][value="selected"]').checked = true;
+      switchTab('email');
+      showToast(`선택한 ${state.selectedIds.size}명이 발송 대상으로 설정되었습니다.`, 'info');
+    }
+
+    /**
+     * 현재 선택된 발송 대상자 목록 반환 (이메일 유효 회원만)
+     */
+    function getTargetRecipients() {
+      const mode = document.querySelector('input[name="recipientMode"]:checked')?.value || 'all';
+      let list = [];
+      if (mode === 'all') {
+        list = state.members;
+      } else if (mode === 'filtered') {
+        list = state.filteredMembers;
+      } else {
+        list = state.members.filter((m) => state.selectedIds.has(m.id));
+      }
+      return list.filter((m) => isValidEmail(m.email));
+    }
+
+    /**
+     * 발송 대상 모드 UI 및 칩 리스트 갱신
+     */
+    function updateRecipientMode() {
+      const mode = document.querySelector('input[name="recipientMode"]:checked')?.value || 'all';
+      const cards = {
+        all: document.getElementById('radioCardAll'),
+        filtered: document.getElementById('radioCardFiltered'),
+        selected: document.getElementById('radioCardSelected')
+      };
+
+      Object.keys(cards).forEach((k) => {
+        if (k === mode) {
+          cards[k].classList.add('border-brand-500', 'bg-indigo-50/40');
+          cards[k].classList.remove('border-slate-100');
+        } else {
+          cards[k].classList.remove('border-brand-500', 'bg-indigo-50/40');
+          cards[k].classList.add('border-slate-100');
+        }
+      });
+
+      const targets = getTargetRecipients();
+      document.getElementById('finalRecipientCount').textContent = `${targets.length}명`;
+
+      const chipsBox = document.getElementById('recipientPreviewChips');
+      chipsBox.innerHTML = '';
+
+      if (targets.length === 0) {
+        chipsBox.innerHTML = '<span class="text-xs text-slate-400">발송 가능한 유효 이메일 대상자가 없습니다.</span>';
+        return;
+      }
+
+      const maxShow = 30;
+      targets.slice(0, maxShow).forEach((m) => {
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-xs font-medium text-slate-700';
+        chip.textContent = getSafeName(m.name);
+        chipsBox.appendChild(chip);
+      });
+
+      if (targets.length > maxShow) {
+        const more = document.createElement('span');
+        more.className = 'inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-100 text-brand-700 text-xs font-bold';
+        more.textContent = `+${targets.length - maxShow}명 더보기`;
+        chipsBox.appendChild(more);
+      }
+    }
+
+    /**
+     * 마지막으로 포커스된 입력창(제목 또는 본문) 기억
+     */
+    function setActiveField(fieldId) {
+      state.activeInputId = fieldId;
+      const hint = document.getElementById('activeTargetHint');
+      hint.textContent = fieldId === 'emailSubject' ? '삽입 위치: 제목' : '삽입 위치: 본문';
+    }
+
+    /**
+     * 원클릭 개인화 변수({{이름}}, {{생년월일}}) 커서 위치 자동 삽입
+     */
+    function insertVariable(variableTag) {
+      const targetEl = document.getElementById(state.activeInputId || 'emailBody');
+      if (!targetEl) return;
+
+      const start = targetEl.selectionStart ?? targetEl.value.length;
+      const end = targetEl.selectionEnd ?? targetEl.value.length;
+      const original = targetEl.value;
+
+      targetEl.value = original.substring(0, start) + variableTag + original.substring(end);
+      const newCursorPos = start + variableTag.length;
+
+      targetEl.focus();
+      targetEl.setSelectionRange(newCursorPos, newCursorPos);
+      showToast(`${variableTag} 변수가 삽입되었습니다.`, 'info');
+    }
+
+    /**
+     * 관리자 시트 버튼 클릭 처리
+     */
+    function handleAdminSheetClick() {
+      if (state.isAdminVerified && state.verifiedSheetUrl) {
+        window.open(state.verifiedSheetUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      document.getElementById('adminCodeInput').value = '';
+      document.getElementById('adminErrorMsg').classList.add('hidden');
+      openModal('modalAdmin');
+      setTimeout(() => document.getElementById('adminCodeInput').focus(), 100);
+    }
+
+    /**
+     * 관리자 인증번호 검증 요청
+     */
+    function submitAdminAuth() {
+      const code = document.getElementById('adminCodeInput').value.trim();
+      const errEl = document.getElementById('adminErrorMsg');
+      const btn = document.getElementById('btnSubmitAdmin');
+
+      if (!code) {
+        errEl.textContent = '인증번호를 입력해 주세요.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '확인 중...';
+      errEl.classList.add('hidden');
+
+      const onSuccess = (res) => {
+        btn.disabled = false;
+        btn.textContent = '인증하기';
+        if (res && res.success) {
+          state.isAdminVerified = true;
+          state.verifiedSheetUrl = res.sheetUrl;
+
+          // 상단 버튼 UI를 인증 완료 상태로 변경
+          document.getElementById('adminBtnText').textContent = '구글시트 열기';
+          const lockIcon = document.getElementById('adminLockIcon');
+          lockIcon.setAttribute('data-lucide', 'external-link');
+          lockIcon.classList.remove('text-amber-300');
+          lockIcon.classList.add('text-emerald-300');
+          lucide.createIcons();
+
+          closeModal('modalAdmin');
+          showToast('관리자 인증 완료! 구글 시트를 새 탭에서 엽니다.', 'success');
+          window.open(res.sheetUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          errEl.textContent = res ? res.message : '인증에 실패했습니다.';
+          errEl.classList.remove('hidden');
+        }
+      };
+
+      if (isGasEnvironment) {
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.textContent = '인증하기';
+            errEl.textContent = '오류: ' + err.message;
+            errEl.classList.remove('hidden');
+          })
+          .verifyAdminPassword(code);
+      } else {
+        // 데모 모드 인증 (1234)
+        setTimeout(() => {
+          if (code === '1234') {
+            onSuccess({
+              success: true,
+              sheetUrl: 'https://docs.google.com/spreadsheets/d/1m2jlkwV8QOUUFQ9YkvciTyVLWW5oIVYb7-YeTTubggg/edit?resourcekey=&gid=995448348#gid=995448348'
+            });
+          } else {
+            onSuccess({ success: false, message: '인증번호가 일치하지 않습니다. (데모 비밀번호: 1234)' });
+          }
+        }, 300);
+      }
+    }
+
+    /**
+     * 발송 전 미리보기 모달 열기 (첫 번째 회원 기준 자동 치환)
+     */
+    function openPreviewModal() {
+      const targets = getTargetRecipients();
+      const subject = document.getElementById('emailSubject').value.trim();
+      const body = document.getElementById('emailBody').value.trim();
+
+      if (targets.length === 0) {
+        showToast('미리보기할 발송 대상 회원이 없습니다.', 'warning');
+        return;
+      }
+      if (!subject || !body) {
+        showToast('이메일 제목과 본문을 먼저 입력해 주세요.', 'warning');
+        return;
+      }
+
+      state.previewIndex = 0;
+      renderPreviewContent();
+      openModal('modalPreview');
+    }
+
+    /**
+     * 미리보기 대상 회원 이전/다음 전환
+     */
+    function changePreviewMember(delta) {
+      const targets = getTargetRecipients();
+      if (targets.length === 0) return;
+      state.previewIndex = (state.previewIndex + delta + targets.length) % targets.length;
+      renderPreviewContent();
+    }
+
+    /**
+     * 미리보기 모달 내용 렌더링
+     */
+    function renderPreviewContent() {
+      const targets = getTargetRecipients();
+      const member = targets[state.previewIndex] || targets[0];
+      const sender = document.getElementById('emailSenderName').value.trim() || '가치있는 미래교육 연구소';
+      const rawSubject = document.getElementById('emailSubject').value;
+      const rawBody = document.getElementById('emailBody').value;
+
+      const safeName = getSafeName(member.name);
+      const replacedSubject = applyPersonalization(rawSubject, member);
+      const replacedBody = applyPersonalization(rawBody, member);
+
+      document.getElementById('previewMemberIndex').textContent = state.previewIndex + 1;
+      document.getElementById('previewMemberTotal').textContent = targets.length;
+      document.getElementById('previewSender').textContent = sender;
+      document.getElementById('previewRecipient').textContent = `${safeName} <${member.email}>` + (!String(member.name || '').trim() ? ' (이름 미입력 → 기본값 적용)' : '');
+      document.getElementById('previewSubject').textContent = replacedSubject;
+      document.getElementById('previewBody').textContent = replacedBody;
+    }
+
+    /**
+     * 이메일 일괄 발송 최종 확인 모달 열기
+     */
+    function openSendConfirmModal() {
+      const targets = getTargetRecipients();
+      const subject = document.getElementById('emailSubject').value.trim();
+      const body = document.getElementById('emailBody').value.trim();
+      const sender = document.getElementById('emailSenderName').value.trim() || '가치있는 미래교육 연구소';
+
+      if (targets.length === 0) {
+        showToast('발송할 회원이 없습니다. 대상을 확인해 주세요.', 'warning');
+        return;
+      }
+      if (!subject || !body) {
+        showToast('이메일 제목과 본문을 모두 입력해 주세요.', 'warning');
+        return;
+      }
+
+      document.getElementById('confirmSendCount').textContent = `${targets.length}명`;
+      document.getElementById('confirmSendSubject').textContent = subject;
+      document.getElementById('confirmSendSender').textContent = sender;
+      document.getElementById('sendingProgressBox').classList.add('hidden');
+      document.getElementById('confirmSendButtons').classList.remove('hidden');
+
+      openModal('modalConfirmSend');
+    }
+
+    /**
+     * 실제 일괄 발송 실행
+     */
+    function executeBulkSend() {
+      const targets = getTargetRecipients();
+      const subject = document.getElementById('emailSubject').value.trim();
+      const body = document.getElementById('emailBody').value.trim();
+      const senderName = document.getElementById('emailSenderName').value.trim() || '가치있는 미래교육 연구소';
+
+      document.getElementById('confirmSendButtons').classList.add('hidden');
+      document.getElementById('sendingProgressBox').classList.remove('hidden');
+
+      const payload = {
+        recipients: targets.map((m) => ({
+          name: m.name,
+          birth: m.birth,
+          email: m.email
+        })),
+        subject: subject,
+        body: body,
+        senderName: senderName
+      };
+
+      const onResult = (res) => {
+        closeModal('modalConfirmSend');
+        if (res && res.success) {
+          if (typeof res.remainingQuota === 'number') {
+            state.remainingQuota = res.remainingQuota;
+            document.getElementById('statQuota').textContent = res.remainingQuota;
+          }
+
+          document.getElementById('resultSummaryText').innerHTML =
+            `총 <strong>${res.sentCount}건</strong> 발송 성공` +
+            (res.failedCount > 0 ? `, <span class="text-rose-500 font-bold">${res.failedCount}건 실패</span>` : '하였습니다!');
+
+          const failedWrap = document.getElementById('resultFailedWrap');
+          const failedUl = document.getElementById('resultFailedList');
+          failedUl.innerHTML = '';
+
+          if (res.failedList && res.failedList.length > 0) {
+            failedWrap.classList.remove('hidden');
+            res.failedList.forEach((f) => {
+              const li = document.createElement('li');
+              li.textContent = `${f.name} (${f.email}): ${f.reason}`;
+              failedUl.appendChild(li);
+            });
+          } else {
+            failedWrap.classList.add('hidden');
+          }
+
+          openModal('modalResult');
+        } else {
+          showToast(res ? res.message : '이메일 발송에 실패했습니다.', 'error');
+        }
+      };
+
+      if (isGasEnvironment) {
+        google.script.run
+          .withSuccessHandler(onResult)
+          .withFailureHandler((err) => {
+            closeModal('modalConfirmSend');
+            showToast('발송 중 서버 오류: ' + err.message, 'error');
+          })
+          .sendBulkEmails(payload);
+      } else {
+        // 데모 모드 시뮬레이션
+        setTimeout(() => {
+          onResult({
+            success: true,
+            sentCount: targets.length,
+            failedCount: 0,
+            failedList: [],
+            remainingQuota: Math.max(0, state.remainingQuota - targets.length)
+          });
+        }, 900);
+      }
+    }
+
+    /**
+     * 모달 열기/닫기 헬퍼
+     */
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
